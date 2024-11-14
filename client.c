@@ -73,7 +73,7 @@ int main() {
             printf("É sua vez, jogador 2! Digite linha e coluna para sua jogada: ");
             while (scanf("%d %d", &linha, &coluna) != 2 || linha < 0 || linha >= 3 || coluna < 0 || coluna >= 3) {
                 printf("Coordenadas inválidas. Tente novamente: ");
-                while (getchar() != '\n'); // Limpa o buffer de entrada
+                while (getchar() != '\n'); 
             }
 
             snprintf(sendBuffer, TAMANHO_BUFFER, "%d %d", linha, coluna);

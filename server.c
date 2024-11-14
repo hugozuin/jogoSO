@@ -34,7 +34,7 @@ void imprimir() {
     }
 }
 
-// Funções de verificação de vitória
+
 int ganhouPorLinha(int l, char c) { return jogo[l][0] == c && jogo[l][1] == c && jogo[l][2] == c; }
 int ganhouPorLinhas(char c) { for (l = 0; l < 3; l++) if (ganhouPorLinha(l, c)) return 1; return 0; }
 int ganhouPorColuna(int c, char j) { return jogo[0][c] == j && jogo[1][c] == j && jogo[2][c] == j; }
