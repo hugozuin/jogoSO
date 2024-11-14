@@ -7,43 +7,61 @@
 #define PORTA 51171
 #define TAMANHO_BUFFER 512
 
+int linha, coluna;
+
 int main() {
     setlocale(LC_ALL, "Portuguese");
-    
+
     WSADATA winsocketsDados;
-    WSAStartup(MAKEWORD(2, 2), &winsocketsDados);
+    if (WSAStartup(MAKEWORD(2, 2), &winsocketsDados) != 0) {
+        perror("Erro ao inicializar o Winsock");
+        return 1;
+    }
 
     SOCKET clientSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    if (clientSocket == INVALID_SOCKET) {
+        perror("Erro ao criar socket do cliente");
+        WSACleanup();
+        return 1;
+    }
+
     struct sockaddr_in serverAddr;
     serverAddr.sin_family = AF_INET;
     serverAddr.sin_addr.s_addr = inet_addr("127.0.0.1");
     serverAddr.sin_port = htons(PORTA);
 
-    connect(clientSocket, (struct sockaddr*)&serverAddr, sizeof(serverAddr));
+    if (connect(clientSocket, (struct sockaddr*)&serverAddr, sizeof(serverAddr)) == SOCKET_ERROR) {
+        perror("Erro ao conectar ao servidor");
+        closesocket(clientSocket);
+        WSACleanup();
+        return 1;
+    }
+
     char sendBuffer[TAMANHO_BUFFER], recvBuffer[TAMANHO_BUFFER];
-    int linha, coluna;
 
     while (1) {
-        // Exibe uma mensagem informando que está aguardando a jogada do servidor
         printf("Vez do jogador 1. Aguardando jogada...\n");
 
-        // Receber e imprimir o tabuleiro atualizado
         int bytesRecebidos = recv(clientSocket, recvBuffer, TAMANHO_BUFFER, 0);
+        if (bytesRecebidos <= 0) {
+            printf("Conexão com o servidor perdida. Fim de Jogo.\n");
+            break;
+        }
         recvBuffer[bytesRecebidos] = '\0';
         printf("%s", recvBuffer);
 
-        // Verifica se houve vitória ou empate
-        if (strstr(recvBuffer, "Jogador 1 venceu!") || strstr(recvBuffer, "Jogador 2 venceu!") || strstr(recvBuffer, "Empate")) {
-            printf("Fim de Jogo! Pressione qualquer tecla para sair...\n");
-            getchar();  // Espera para evitar fechamento imediato
+        if (strstr(recvBuffer, "Fim de Jogo")) {
+            printf("Pressione qualquer tecla para sair...\n");
+            getchar();
             break;
         }
 
-        // Exibe uma mensagem informando que é a vez do jogador
         printf("É sua vez, jogador 2! Digite linha e coluna para sua jogada: ");
-        scanf("%d %d", &linha, &coluna);
+        while (scanf("%d %d", &linha, &coluna) != 2 || linha < 0 || linha >= 3 || coluna < 0 || coluna >= 3) {
+            printf("Coordenadas inválidas. Tente novamente: ");
+            while (getchar() != '\n'); // Limpa o buffer de entrada
+        }
 
-        // Envia a jogada do cliente
         snprintf(sendBuffer, TAMANHO_BUFFER, "%d %d", linha, coluna);
         send(clientSocket, sendBuffer, strlen(sendBuffer), 0);
     }
@@ -52,3 +70,4 @@ int main() {
     WSACleanup();
     return 0;
 }
+
