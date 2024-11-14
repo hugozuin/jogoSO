@@ -4,14 +4,13 @@
 #include <winsock2.h>
 #include <locale.h>
 
-#define PORTA 51171
+#define PORTA 8090
 #define TAMANHO_BUFFER 512
 
-// Variáveis globais do jogo
+
 char jogo[3][3];
 int l, c, i, j;
 
-// Inicializa o tabuleiro vazio
 void inicializarMatriz() {
     for (l = 0; l < 3; l++) {
         for (c = 0; c < 3; c++) {
@@ -20,7 +19,6 @@ void inicializarMatriz() {
     }
 }
 
-// Exibe o tabuleiro no terminal
 void imprimir() {
     printf("\n\n\t 0   1   2\n\n");
     for (l = 0; l < 3; l++) {
@@ -34,7 +32,6 @@ void imprimir() {
     }
 }
 
-
 int ganhouPorLinha(int l, char c) { return jogo[l][0] == c && jogo[l][1] == c && jogo[l][2] == c; }
 int ganhouPorLinhas(char c) { for (l = 0; l < 3; l++) if (ganhouPorLinha(l, c)) return 1; return 0; }
 int ganhouPorColuna(int c, char j) { return jogo[0][c] == j && jogo[1][c] == j && jogo[2][c] == j; }
@@ -42,12 +39,10 @@ int ganhouPorColunas(char j) { for (c = 0; c < 3; c++) if (ganhouPorColuna(c, j)
 int ganhouPorDiagonalPrin(char c) { return jogo[0][0] == c && jogo[1][1] == c && jogo[2][2] == c; }
 int ganhouPorDiagonalSecun(char c) { return jogo[0][2] == c && jogo[1][1] == c && jogo[2][0] == c; }
 
-// Função para verificar se uma posição é válida
 int ehValida(int l, int c) {
     return l >= 0 && l < 3 && c >= 0 && c < 3 && jogo[l][c] == ' ';
 }
 
-// Cria o estado do tabuleiro como string
 void enviarTabuleiro(char *buffer) {
     buffer[0] = '\0';
     strcat(buffer, "\n\n\t 0   1   2\n\n");
@@ -66,7 +61,6 @@ void enviarTabuleiro(char *buffer) {
     }
 }
 
-// Função que retorna a quantidade de posições vazias no tabuleiro
 int quantVazias() {
     int quantidade = 0;
     for (i = 0; i < 3; i++)
@@ -75,18 +69,16 @@ int quantVazias() {
     return quantidade;
 }
 
-// Exibe o menu e retorna a escolha do jogador
 int exibirMenu() {
     int escolha;
     printf("\n1. Jogar novamente\n2. Sair\nEscolha uma opção: ");
     while (scanf("%d", &escolha) != 1 || (escolha != 1 && escolha != 2)) {
         printf("Opção inválida. Escolha 1 para jogar novamente ou 2 para sair: ");
-        while (getchar() != '\n'); // Limpa o buffer de entrada
+        while (getchar() != '\n');
     }
     return escolha;
 }
 
-// Função principal
 int main() {
     setlocale(LC_ALL, "Portuguese");
 
@@ -150,7 +142,7 @@ int main() {
                 printf("Digite linha e coluna para o jogador 1: ");
                 while (scanf("%d %d", &linha, &coluna) != 2 || !ehValida(linha, coluna)) {
                     printf("Coordenadas inválidas. Tente novamente: ");
-                    while (getchar() != '\n'); // Limpa o buffer de entrada
+                    while (getchar() != '\n'); 
                 }
             } else {
                 printf("Aguardando jogada do jogador 2...\n");
@@ -187,10 +179,9 @@ int main() {
             }
 
             send(clientSocket, sendBuffer, strlen(sendBuffer), 0);
-            vez = 3 - vez; // Alterna entre jogador 1 e 2
+            vez = 3 - vez;
         }
 
-        // Exibir menu e verificar se o jogador deseja jogar novamente ou sair
         int escolha = exibirMenu();
         if (escolha == 2) {
             jogando = 0;

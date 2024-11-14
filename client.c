@@ -4,18 +4,17 @@
 #include <winsock2.h>
 #include <locale.h>
 
-#define PORTA 51171
+#define PORTA 8090
 #define TAMANHO_BUFFER 512
 
 int linha, coluna;
 
-// Exibe o menu e retorna a escolha do jogador
 int exibirMenu() {
     int escolha;
     printf("\n1. Jogar novamente\n2. Sair\nEscolha uma opção: ");
     while (scanf("%d", &escolha) != 1 || (escolha != 1 && escolha != 2)) {
         printf("Opção inválida. Escolha 1 para jogar novamente ou 2 para sair: ");
-        while (getchar() != '\n'); // Limpa o buffer de entrada
+        while (getchar() != '\n');
     }
     return escolha;
 }
@@ -80,7 +79,6 @@ int main() {
             send(clientSocket, sendBuffer, strlen(sendBuffer), 0);
         }
 
-        // Exibir menu e verificar se o jogador deseja jogar novamente ou sair
         int escolha = exibirMenu();
         if (escolha == 2) {
             jogando = 0;
