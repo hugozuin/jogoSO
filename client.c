@@ -9,6 +9,17 @@
 
 int linha, coluna;
 
+// Exibe o menu e retorna a escolha do jogador
+int exibirMenu() {
+    int escolha;
+    printf("\n1. Jogar novamente\n2. Sair\nEscolha uma opção: ");
+    while (scanf("%d", &escolha) != 1 || (escolha != 1 && escolha != 2)) {
+        printf("Opção inválida. Escolha 1 para jogar novamente ou 2 para sair: ");
+        while (getchar() != '\n'); // Limpa o buffer de entrada
+    }
+    return escolha;
+}
+
 int main() {
     setlocale(LC_ALL, "Portuguese");
 
@@ -38,32 +49,42 @@ int main() {
     }
 
     char sendBuffer[TAMANHO_BUFFER], recvBuffer[TAMANHO_BUFFER];
+    int jogando = 1;
 
-    while (1) {
-        printf("Vez do jogador 1. Aguardando jogada...\n");
+    while (jogando) {
+        while (1) {
+            printf("Vez do jogador 1. Aguardando jogada...\n");
 
-        int bytesRecebidos = recv(clientSocket, recvBuffer, TAMANHO_BUFFER, 0);
-        if (bytesRecebidos <= 0) {
-            printf("Conexão com o servidor perdida. Fim de Jogo.\n");
-            break;
+            int bytesRecebidos = recv(clientSocket, recvBuffer, TAMANHO_BUFFER, 0);
+            if (bytesRecebidos <= 0) {
+                printf("Conexão com o servidor perdida. Fim de Jogo.\n");
+                jogando = 0;
+                break;
+            }
+            recvBuffer[bytesRecebidos] = '\0';
+            printf("%s", recvBuffer);
+
+            if (strstr(recvBuffer, "Fim de Jogo")) {
+                printf("Pressione qualquer tecla para sair...\n");
+                getchar();
+                break;
+            }
+
+            printf("É sua vez, jogador 2! Digite linha e coluna para sua jogada: ");
+            while (scanf("%d %d", &linha, &coluna) != 2 || linha < 0 || linha >= 3 || coluna < 0 || coluna >= 3) {
+                printf("Coordenadas inválidas. Tente novamente: ");
+                while (getchar() != '\n'); // Limpa o buffer de entrada
+            }
+
+            snprintf(sendBuffer, TAMANHO_BUFFER, "%d %d", linha, coluna);
+            send(clientSocket, sendBuffer, strlen(sendBuffer), 0);
         }
-        recvBuffer[bytesRecebidos] = '\0';
-        printf("%s", recvBuffer);
 
-        if (strstr(recvBuffer, "Fim de Jogo")) {
-            printf("Pressione qualquer tecla para sair...\n");
-            getchar();
-            break;
+        // Exibir menu e verificar se o jogador deseja jogar novamente ou sair
+        int escolha = exibirMenu();
+        if (escolha == 2) {
+            jogando = 0;
         }
-
-        printf("É sua vez, jogador 2! Digite linha e coluna para sua jogada: ");
-        while (scanf("%d %d", &linha, &coluna) != 2 || linha < 0 || linha >= 3 || coluna < 0 || coluna >= 3) {
-            printf("Coordenadas inválidas. Tente novamente: ");
-            while (getchar() != '\n'); // Limpa o buffer de entrada
-        }
-
-        snprintf(sendBuffer, TAMANHO_BUFFER, "%d %d", linha, coluna);
-        send(clientSocket, sendBuffer, strlen(sendBuffer), 0);
     }
 
     closesocket(clientSocket);

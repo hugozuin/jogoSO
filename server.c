@@ -75,6 +75,17 @@ int quantVazias() {
     return quantidade;
 }
 
+// Exibe o menu e retorna a escolha do jogador
+int exibirMenu() {
+    int escolha;
+    printf("\n1. Jogar novamente\n2. Sair\nEscolha uma opção: ");
+    while (scanf("%d", &escolha) != 1 || (escolha != 1 && escolha != 2)) {
+        printf("Opção inválida. Escolha 1 para jogar novamente ou 2 para sair: ");
+        while (getchar() != '\n'); // Limpa o buffer de entrada
+    }
+    return escolha;
+}
+
 // Função principal
 int main() {
     setlocale(LC_ALL, "Portuguese");
@@ -124,52 +135,66 @@ int main() {
         return 1;
     }
 
-    inicializarMatriz();
-    int vez = 1, linha, coluna, jogando = 1;
-    char recvBuffer[TAMANHO_BUFFER], sendBuffer[TAMANHO_BUFFER], jogador;
-
+    int jogando = 1;
     while (jogando) {
-        jogador = (vez == 1) ? 'X' : 'O';
-        imprimir();
+        inicializarMatriz();
+        int vez = 1, linha, coluna;
+        char recvBuffer[TAMANHO_BUFFER], sendBuffer[TAMANHO_BUFFER], jogador;
+        int jogoAtivo = 1;
 
-        if (vez == 1) {
-            printf("Digite linha e coluna para o jogador 1: ");
-            while (scanf("%d %d", &linha, &coluna) != 2 || !ehValida(linha, coluna)) {
-                printf("Coordenadas inválidas. Tente novamente: ");
-                while (getchar() != '\n'); // Limpa o buffer de entrada
+        while (jogoAtivo) {
+            jogador = (vez == 1) ? 'X' : 'O';
+            imprimir();
+
+            if (vez == 1) {
+                printf("Digite linha e coluna para o jogador 1: ");
+                while (scanf("%d %d", &linha, &coluna) != 2 || !ehValida(linha, coluna)) {
+                    printf("Coordenadas inválidas. Tente novamente: ");
+                    while (getchar() != '\n'); // Limpa o buffer de entrada
+                }
+            } else {
+                printf("Aguardando jogada do jogador 2...\n");
+                int bytesRecebidos = recv(clientSocket, recvBuffer, TAMANHO_BUFFER, 0);
+                if (bytesRecebidos <= 0) {
+                    printf("Jogador 2 se desconectou. Fim de Jogo.\n");
+                    jogoAtivo = 0;
+                    break;
+                }
+                recvBuffer[bytesRecebidos] = '\0';
+                sscanf(recvBuffer, "%d %d", &linha, &coluna);
+                if (!ehValida(linha, coluna)) {
+                    printf("Jogada inválida recebida do jogador 2. Fim de Jogo.\n");
+                    jogoAtivo = 0;
+                    break;
+                }
             }
-        } else {
-            printf("Aguardando jogada do jogador 2...\n");
-            int bytesRecebidos = recv(clientSocket, recvBuffer, TAMANHO_BUFFER, 0);
-            if (bytesRecebidos <= 0) {
-                printf("Jogador 2 se desconectou. Fim de Jogo.\n");
-                break;
+
+            jogo[linha][coluna] = jogador;
+            int ganhou = ganhouPorLinhas(jogador) || ganhouPorColunas(jogador) || ganhouPorDiagonalPrin(jogador) || ganhouPorDiagonalSecun(jogador);
+            int empate = quantVazias() == 0 && !ganhou;
+
+            enviarTabuleiro(sendBuffer);
+            if (ganhou) {
+                strcat(sendBuffer, vez == 1 ? "\nJogador 1 venceu! Fim de Jogo.\n" : "\nJogador 2 venceu! Fim de Jogo.\n");
+                printf("%s", sendBuffer);
+                jogoAtivo = 0;
+            } else if (empate) {
+                strcat(sendBuffer, "\nEmpate! Fim de Jogo.\n");
+                printf("%s", sendBuffer);
+                jogoAtivo = 0;
+            } else {
+                strcat(sendBuffer, "\nContinuar\n");
             }
-            recvBuffer[bytesRecebidos] = '\0';
-            sscanf(recvBuffer, "%d %d", &linha, &coluna);
-            if (!ehValida(linha, coluna)) {
-                printf("Jogada inválida recebida do jogador 2. Fim de Jogo.\n");
-                break;
-            }
+
+            send(clientSocket, sendBuffer, strlen(sendBuffer), 0);
+            vez = 3 - vez; // Alterna entre jogador 1 e 2
         }
 
-        jogo[linha][coluna] = jogador;
-        int ganhou = ganhouPorLinhas(jogador) || ganhouPorColunas(jogador) || ganhouPorDiagonalPrin(jogador) || ganhouPorDiagonalSecun(jogador);
-        int empate = quantVazias() == 0 && !ganhou;
-
-        enviarTabuleiro(sendBuffer);
-        if (ganhou) {
-            strcat(sendBuffer, vez == 1 ? "\nJogador 1 venceu! Fim de Jogo.\n" : "\nJogador 2 venceu! Fim de Jogo.\n");
+        // Exibir menu e verificar se o jogador deseja jogar novamente ou sair
+        int escolha = exibirMenu();
+        if (escolha == 2) {
             jogando = 0;
-        } else if (empate) {
-            strcat(sendBuffer, "\nEmpate! Fim de Jogo.\n");
-            jogando = 0;
-        } else {
-            strcat(sendBuffer, "\nContinuar\n");
         }
-
-        send(clientSocket, sendBuffer, strlen(sendBuffer), 0);
-        vez = 3 - vez; // Alterna entre jogador 1 e 2
     }
 
     closesocket(clientSocket);
